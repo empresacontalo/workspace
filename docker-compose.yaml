@@ -1,0 +1,131 @@
+# =============================================================================
+# Docker Compose — AI Dev Workspace Stack (Docker Swarm)
+# =============================================================================
+# Debian XFCE + XRDP environment with AI CLIs and Web apps.
+#
+# Services exposed:
+#   - XRDP (RDP Access)     (port 3389)
+#   - OmniRoute             (port 4000)
+#   - Hermes Workspace      (port 3000)
+#   - Aion UI               (port 3005)
+# =============================================================================
+
+version: "3.8"
+
+services:
+  ai-workspace:
+    image: ${REGISTRY:-local}/ai-workspace:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - target: 3389
+        published: ${RDP_PORT:-3389}
+        protocol: tcp
+        mode: host
+      - target: 4000
+        published: ${OMNIROUTE_PORT:-4000}
+        protocol: tcp
+        mode: host
+      - target: 3000
+        published: ${HERMES_PORT:-3000}
+        protocol: tcp
+        mode: host
+      - target: 3005
+        published: ${AIONUI_PORT:-3005}
+        protocol: tcp
+        mode: host
+    networks:
+      - app_network
+      - npm_public
+    environment:
+      # RDP Credentials
+      - RDP_USER=${RDP_USER:-aiuser}
+      - RDP_PASSWORD=${RDP_PASSWORD:-aipassword}
+
+      - NODE_ENV=${NODE_ENV:-production}
+      - HOST=0.0.0.0
+      - AIONUI_HOST=0.0.0.0
+      
+      # LLM provider keys
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - TOGETHER_API_KEY=${TOGETHER_API_KEY}
+
+      # OmniRoute settings
+      - OMNIROUTE_DEFAULT_PROVIDER=${OMNIROUTE_DEFAULT_PROVIDER:-openai}
+      - OMNIROUTE_LOG_LEVEL=${OMNIROUTE_LOG_LEVEL:-info}
+      - OMNIROUTE_RATE_LIMIT=${OMNIROUTE_RATE_LIMIT:-100}
+      - OMNIROUTE_ENABLE_CACHE=${OMNIROUTE_ENABLE_CACHE:-true}
+      - REQUIRE_API_KEY=${REQUIRE_API_KEY:-true}
+      - OMNIROUTE_API_KEY=${OMNIROUTE_API_KEY}
+      # Explicitly allow vision models/images to pass through
+      - OMNIROUTE_ALLOW_VISION=${OMNIROUTE_ALLOW_VISION:-true}
+      
+      # hermes-agent gateway
+      - API_SERVER_KEY=${API_SERVER_KEY}
+      - HERMES_LLM_MODEL=${HERMES_LLM_MODEL}
+
+      # Hermes Workspace settings
+      - HERMES_SECRET_KEY=${HERMES_SECRET_KEY}
+      - HERMES_SESSION_SECRET=${HERMES_SESSION_SECRET:-change-me-in-production}
+      - HERMES_PASSWORD=${HERMES_PASSWORD}
+      - HERMES_ALLOW_INSECURE_REMOTE=${HERMES_ALLOW_INSECURE_REMOTE:-0}
+      - COOKIE_SECURE=${COOKIE_SECURE:-0}
+
+      # Aion UI
+      - AION_API_URL=${AION_API_URL:-http://localhost:4000}
+      - AION_HERMES_URL=${AION_HERMES_URL:-http://localhost:3000}
+      - AION_SECRET_KEY=${AION_SECRET_KEY}
+
+      # CLI tools
+      - CLAUDE_CODE_API_KEY=${CLAUDE_CODE_API_KEY}
+      - CLAUDE_CODE_MODEL=${CLAUDE_CODE_MODEL:-claude-sonnet-4-20250514}
+      - ANTIGRAVITY_API_KEY=${ANTIGRAVITY_API_KEY}
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      - OPENCODE_PROVIDER=${OPENCODE_PROVIDER:-anthropic}
+      - OPENCODE_API_KEY=${OPENCODE_API_KEY}
+      - COMMANDCODE_AUTH_TOKEN=${COMMANDCODE_AUTH_TOKEN}
+    volumes:
+      - omniroute_data:/data/omniroute
+      - hermes_data:/data/hermes
+      - aionui_data:/data/aionui
+      - workspace:/workspace
+      - cli_config:/root/.config
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+
+volumes:
+  omniroute_data:
+    driver: local
+  hermes_data:
+    driver: local
+  aionui_data:
+    driver: local
+  workspace:
+    driver: local
+  cli_config:
+    driver: local
+
+networks:
+  app_network:
+    driver: overlay
+    internal: true
+    attachable: true
+  npm_public:
+    external: true
