@@ -20,8 +20,8 @@ if ! id -u "$RDP_USER" > /dev/null 2>&1; then
 fi
 
 # Fix volume permissions
-mkdir -p /data/logs
-chown -R "$RDP_USER:$RDP_USER" /workspace /data /opt/hermes-agent /opt/hermes /opt/omniroute /opt/hermes-workspace /opt/aionui 2>/dev/null || true
+mkdir -p /data/logs /opt/data/hermes
+chown -R "$RDP_USER:$RDP_USER" /workspace /data /opt/data /opt/hermes-agent /opt/hermes /opt/omniroute /opt/hermes-workspace /opt/aionui 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
 # Setup Hermes Agent env file
@@ -68,6 +68,7 @@ echo "Hermes Gateway and Dashboard started"
 # 3. Hermes Workspace (3000)
 cd /opt/hermes-workspace
 PORT=3000 HOST=0.0.0.0 \
+HERMES_HOME=/opt/data/hermes \
 HERMES_API_URL="http://localhost:8642" \
 HERMES_DASHBOARD_URL="http://localhost:9119" \
 HERMES_API_TOKEN="${API_SERVER_KEY}" \

@@ -77,6 +77,10 @@ services:
       - HERMES_PASSWORD=${HERMES_PASSWORD}
       - HERMES_ALLOW_INSECURE_REMOTE=${HERMES_ALLOW_INSECURE_REMOTE:-0}
       - COOKIE_SECURE=${COOKIE_SECURE:-0}
+      # Persist session tokens & identity to the hermes_data volume.
+      # Without this, tokens are written to /root/.hermes (not persisted)
+      # and every container restart invalidates cookies → terminal 401.
+      - HERMES_HOME=/opt/data/hermes
 
       # Aion UI
       - AION_API_URL=${AION_API_URL:-http://localhost:4000}
@@ -93,8 +97,7 @@ services:
       - COMMANDCODE_AUTH_TOKEN=${COMMANDCODE_AUTH_TOKEN}
     volumes:
       - omniroute_data:/data/omniroute
-      - hermes_data:/data/hermes
-      - aionui_data:/data/aionui
+      - hermes_data:/opt/data
       - workspace:/workspace
       - cli_config:/root/.config
     deploy:
@@ -114,8 +117,6 @@ volumes:
   omniroute_data:
     driver: local
   hermes_data:
-    driver: local
-  aionui_data:
     driver: local
   workspace:
     driver: local
